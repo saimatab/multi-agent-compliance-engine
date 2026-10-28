@@ -6,7 +6,7 @@ from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, END
 from pinecone import Pinecone
 
-# Load local environment variables (bypassed on Render as it uses dashboard env configuration)
+# Load local environment variables
 load_dotenv()
 
 # ==========================================
@@ -43,7 +43,7 @@ def agent_router_rag(state: AgentState) -> dict:
     )
     
     if query_response and query_response['matches']:
-        context = query_response['matches'][0]['metadata']['text']
+        context = query_response['matches']['metadata']['text']
     else:
         context = "No strict policy constraints found."
         
@@ -51,11 +51,11 @@ def agent_router_rag(state: AgentState) -> dict:
 
 def agent_compliance_evaluator(state: AgentState) -> dict:
     """
-    Agent B: Compares input against context data using Groq's flagship open-source engine.
+    Agent B: Compares input against context data using Groq's active production engine.
     Ensures zero hallucination by formatting strict deterministic JSON schemas.
     """
-    # Using production active llama-3.3-70b-versatile model
-    llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
+    # Updated to Groq's active flagship model: qwen/qwen3.8-27b
+    llm = ChatGroq(model="qwen/qwen3.8-27b", temperature=0)
     structured_llm = llm.with_structured_output(ComplianceReport)
     
     prompt = f"""
@@ -73,8 +73,8 @@ def agent_executive_summarizer(state: AgentState) -> dict:
     """
     Agent C: Strips data values based on risk thresholds and records safe analytical summaries.
     """
-    # Using production active llama-3.3-70b-versatile model
-    llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
+    # Updated to Groq's active flagship model: qwen/qwen3.8-27b
+    llm = ChatGroq(model="qwen/qwen3.8-27b", temperature=0.2)
     
     prompt = f"""
     You are an operations logging engine. Summarize this operational transaction alert.
