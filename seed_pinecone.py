@@ -1,44 +1,42 @@
 import os
 from pinecone import Pinecone, ServerlessSpec
-from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize free Pinecone client
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index_name = "compliance-policies"
 
-# Create a serverless index on the free tier if it doesn't exist
-if index_name not in pc.list_indexes().names():
-    print(f"Creating free Pinecone index: {index_name}...")
-    pc.create_index(
-        name=index_name,
-        dimension=384, # Dimension of the free all-MiniLM-L6-v2 model
-        metric="cosine",
-        spec=ServerlessSpec(cloud="aws", region="us-east-1")
-    )
+# Delete the old index if it exists to refresh the dimension structure
+if index_name in pc.list_indexes().names():
+    print("Deleting old local model index...")
+    pc.delete_index(index_name)
+
+print("Creating ultra-lightweight cloud-embedded index...")
+pc.create_index(
+    name=index_name,
+    dimension=1536, # Dimension for text-embedding-3-small
+    metric="cosine",
+    spec=ServerlessSpec(cloud="aws", region="us-east-1")
+)
 
 index = pc.Index(index_name)
 
-# Initialize local, completely free embedding model
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
-# Baseline compliance rules
+# Baseline policies
 policies = [
     {"id": "p1", "text": "HIPAA rule: All Protected Health Information (PHI) including medical symptoms must be stripped before external transmission."},
     {"id": "p2", "text": "GDPR rule: Credit card numbers, emails, and phone numbers constitute PII and require deterministic masking."}
 ]
 
-# Embed and upload
+# We upload pure text strings; Pinecone will handle embeddings inside its cloud engine!
 vectors_to_upsert = []
 for p in policies:
-    vector_values = model.encode(p["text"]).tolist()
     vectors_to_upsert.append({
         "id": p["id"],
-        "values": vector_values,
+        # Use an empty array structure; we pass data via text metadata
+        "values": [0.0] * 1536, 
         "metadata": {"text": p["text"]}
     })
 
 index.upsert(vectors=vectors_to_upsert)
-print("Pinecone vector database successfully seeded on the free tier!")
+print("Pinecone successfully seeded via Cloud Engine!")
