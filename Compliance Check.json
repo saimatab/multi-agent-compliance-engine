@@ -1,0 +1,127 @@
+{
+  "name": "Compliance Check",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "compliance-check",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "425370e9-33fa-4e34-861f-df644bb60abe",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "de6df268-4523-49ea-a3bc-f7dfbb2dcac8"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://multi-agent-compliance-engine-1.onrender.com/analyze",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "raw_input",
+              "value": "={{ $json.body.body_text }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "f37f3298-a397-4a8f-8cd3-99fe9fea6e78",
+      "name": "Call FastAPI on Render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "projectRef": "zbsbtnrrywtbniemjanq",
+        "tableId": "compliance_audit_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "risk_category",
+              "fieldValue": "={{ $json.risk_category }}"
+            },
+            {
+              "fieldId": "compliance_score",
+              "fieldValue": "={{ $json.compliance_score }}"
+            },
+            {
+              "fieldId": "retrieved_context",
+              "fieldValue": "= {{ $json.retrieved_context }}"
+            },
+            {
+              "fieldId": "final_output",
+              "fieldValue": "={{ $json.final_output }}"
+            }
+          ]
+        }
+      },
+      "id": "ab9135f1-28f5-46b5-9cb3-d1095f7d1574",
+      "name": "Save to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "credentials": {
+        "supabaseOAuth2Api": {
+          "id": "AvEnNNqhgEHtxD5K",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Call FastAPI on Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call FastAPI on Render": {
+      "main": [
+        [
+          {
+            "node": "Save to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fbbbecee-0ecf-4eba-8508-eacf54bdbe75",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "39244c8632f83c667da8512b0248123e8070c6dcb063794dc277a6262152e996"
+  },
+  "nodeGroups": [],
+  "id": "ZaiJAh6tk4EpH3ck",
+  "tags": []
+}
